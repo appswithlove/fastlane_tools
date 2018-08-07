@@ -1,0 +1,48 @@
+# Customise this file, documentation can be found here:
+# https://github.com/fastlane/fastlane/tree/master/docs
+# All available actions: https://github.com/fastlane/fastlane/blob/master/fastlane/docs/Actions.md
+# can also be listed using the `fastlane actions` command
+
+# Change the syntax highlighting to Ruby
+# All lines starting with a # are ignored when running `fastlane`
+
+# USAGE:
+# Import these lanes and actions by adding
+# 
+# import_from_git(url: "link.to.this.repo", branch: "master")
+# 
+# to the top of your fastfile
+
+
+fastlane_version "2.0.0" # This is the minimum version number required.
+
+default_platform :ios
+
+platform :ios do
+
+  error do |lane, exception|
+    app_name = ENV["APP_NAME"].nil? ? "Unknown App" : ENV["APP_NAME"]
+
+    unless ENV["CI"]
+      notification(
+        subtitle: "Lane '#{lane}' failed",
+        message: "Reason: #{exception.message}",
+        sound: "Basso",
+        )
+    end
+
+    unless ENV["SLACK_URL"].nil?
+      slack(
+        message: "#{app_name} – Failure! (╯°□°）╯︵ ┻━┻",
+        success: false,
+        payload: { "Reason" => exception.message }
+        )
+    else 
+      UI.header("Step: Slack")
+      UI.error("Tried posting a notification to Slack but SLACK_URL could not be found in environment
+        or you did not specify any environment. Set an environment by adding a .env file and passing it to fastlane: \n
+        fastlane your_lane --env your_environment")
+    end
+  end
+
+end
