@@ -31,7 +31,7 @@ xcode-select --install
 ## Importing Actions
 
 Once you have set up Fastlane for your project, Import the available actions into your Fastfile by adding 
-`import_from_git(url: "https://github.com/appswithlove/fastlane_tools.git", tag: "v1")`
+`import_from_git(url: "https://github.com/appswithlove/fastlane_tools.git", version: "~>1.0.0")`
 to the top of your existing Fastfile.
 
 # Configuration
