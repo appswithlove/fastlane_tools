@@ -28,7 +28,14 @@ xcode-select --install
 </tr>
 </table>
 
+## Importing Actions
+
+Once you have set up Fastlane for your project, Import the available actions into your Fastfile by adding 
+`import_from_git(url: "https://github.com/appswithlove/fastlane_tools.git", tag: "v1")`
+to the top of your existing Fastfile.
+
 # Configuration
+
 Store all your configuration values in  `.env` files. These files can be named to suit your needs, e.g. `.env.appstore`
 Then call fastlane with the env parameter, e.g. `fastlane deploy_appstore --env appstore`
 
