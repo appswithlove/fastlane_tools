@@ -14,6 +14,8 @@ module Fastlane
         git_branch = Actions.git_branch.to_s
         git_tag = Helper.backticks("git tag -l --points-at HEAD").to_s
         git_commit_hash = Helper.backticks("git rev-parse HEAD").to_s
+        
+        whats_new = Helper.backticks("git log -1 --pretty=%B").to_s
 
         bundle_version = Fastlane::Actions::GetIpaInfoPlistValueAction.run(ipa: config[:ipa], key: "CFBundleVersion").to_s
 
@@ -21,11 +23,11 @@ module Fastlane
         
         curl_command = "curl -X PUT"
         curl_command << " -F app=@%s" % config[:ipa]
-
         curl_command << " -F 'custom_git_url=%s'"           % git_url
         curl_command << " -F 'custom_git_branch=%s'"        % git_branch
         curl_command << " -F 'custom_git_tag=%s'"           % git_tag
         curl_command << " -F 'custom_git_commit_hash=%s'"   % git_commit_hash
+        curl_command << " -F 'whats_new=%s'"                % whats_new
         curl_command << " -F 'custom_bundle_version=%s'"    % bundle_version
         curl_command << " -F 'build_type=%s'"               % build_type
         curl_command << " " << config[:upload_url]
