@@ -14,8 +14,9 @@ module Fastlane
         git_branch = Actions.git_branch.to_s
         git_tag = Helper.backticks("git tag -l --points-at HEAD").to_s
         git_commit_hash = Helper.backticks("git rev-parse HEAD").to_s
+        last_commit = Helper.backticks("git log -1 --pretty=%B").to_s
         
-        whats_new = Helper.backticks("git log -1 --pretty=%B").to_s
+        whats_new = prompt(text: "What's new: ", ci_input: last_commit)
 
         bundle_version = Fastlane::Actions::GetIpaInfoPlistValueAction.run(ipa: config[:ipa], key: "CFBundleVersion").to_s
 
