@@ -22,7 +22,7 @@ module Fastlane
         build_type = other_action.is_ci? ? "CI" : "Fastlane"
         
         curl_command = "curl -X PUT"
-        curl_command << " -F app=@%s" % config[:ipa]
+        curl_command << " -F 'app=@%s'" % config[:ipa]
         curl_command << " -F 'custom_git_url=%s'"           % git_url
         curl_command << " -F 'custom_git_branch=%s'"        % git_branch
         curl_command << " -F 'custom_git_tag=%s'"           % git_tag
