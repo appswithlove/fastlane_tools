@@ -6,21 +6,19 @@ module Fastlane
     class UpdraftAction < Action
       def self.run(config)
         begin
-        config[:ipa] = Actions.lane_context[SharedValues::IPA_OUTPUT_PATH] if Actions.lane_context[SharedValues::IPA_OUTPUT_PATH]
-
         UI.important("Collecting the necessary data to upload...")
 
         git_url = Helper.backticks("git remote get-url origin").to_s
         git_branch = Actions.git_branch.to_s
         git_tag = Helper.backticks("git tag -l --points-at HEAD").to_s
         git_commit_hash = Helper.backticks("git rev-parse HEAD").to_s
-        
+
         whats_new = Helper.backticks("git log -1 --pretty=%B").to_s
 
         bundle_version = Fastlane::Actions::GetIpaInfoPlistValueAction.run(ipa: config[:ipa], key: "CFBundleVersion").to_s
 
         build_type = other_action.is_ci? ? "CI" : "Fastlane"
-        
+
         curl_command = "curl -X PUT"
         curl_command << " -F 'app=@%s'" % config[:ipa]
         curl_command << " -F 'custom_git_url=%s'"           % git_url
@@ -69,17 +67,50 @@ module Fastlane
             optional: false,
             env_name: "UPDRAFT_URL",
             description: "Project Specific API Upload URL. You can get this in your Updraft Project Settings",
+            sensitive: true,
+            verify_block: proc do |value|
+              UI.user_error!("No URL for Updraft given, pass using `upload_url: 'url'`") unless value.to_s.length > 0
+            end
           ),
           FastlaneCore::ConfigItem.new(
             key: :ipa,
-            optional: false,
+            optional: true,
+            default_value: Actions.lane_context[SharedValues::IPA_OUTPUT_PATH],
+            default_value_dynamic: true,
+            conflicting_options: [:apk],
             env_name: "UPDRAFT_IPA_PATH",
             description: "Path to your ipa file",
             verify_block: proc do |value|
               UI.user_error!("Could not find ipa file at path '#{File.expand_path(value)}'") unless File.exist?(value)
               UI.user_error("'#{value}' doesn't seem to be an ipa file") unless value.end_with?(".ipa")
             end
+          ),
+          FastlaneCore::ConfigItem.new(
+            key: :apk,
+            optional: true,
+            default_value: Actions.lane_context[SharedValues::APK_OUTPUT_PATH],
+            default_value_dynamic: true,
+            conflicting_options: [:ipa],
+            env_name: "UPDRAFT_APK_PATH",
+            description: "Path to your apk file",
+            verify_block: proc do |value|
+              UI.user_error!("Could not find apk file at path '#{File.expand_path(value)}'") unless File.exist?(value)
+              UI.user_error("'#{value}' doesn't seem to be an apk file") unless value.end_with?(".apk")
+            end
             )
+        ]
+      end
+
+      def self.example_code
+        [
+          'updraft(
+            upload_url: "...",
+            ipa: "./ipa_file.ipa",
+          )',
+          'updraft(
+            upload_url: "...",
+            apk: "../build/app/outputs/apk/qa/release/app-qa-release.apk",
+           )'
         ]
       end
 
@@ -88,7 +119,7 @@ module Fastlane
       end
 
       def self.is_supported?(platform)
-        platform == :ios
+        [:ios, :android].include?(platform)
       end
     end
   end
