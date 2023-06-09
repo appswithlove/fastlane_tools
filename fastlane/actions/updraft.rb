@@ -8,19 +8,22 @@ module Fastlane
         begin
         UI.important("Collecting the necessary data to upload...")
 
+        path = config[:ipa] if File.exist?(config[:ipa]) || config[:apk] if File.exist?(config[:apk])
+        UI.user_error!("Please provide ipa or apk") unless path
+
         git_url = Helper.backticks("git remote get-url origin").to_s
         git_branch = Actions.git_branch.to_s
         git_tag = Helper.backticks("git tag -l --points-at HEAD").to_s
         git_commit_hash = Helper.backticks("git rev-parse HEAD").to_s
 
-        whats_new = Helper.backticks("git log -1 --pretty=%B").to_s
+        whats_new = config[:changelog]
 
         bundle_version = Fastlane::Actions::GetIpaInfoPlistValueAction.run(ipa: config[:ipa], key: "CFBundleVersion").to_s
 
         build_type = other_action.is_ci? ? "CI" : "Fastlane"
 
         curl_command = "curl -X PUT"
-        curl_command << " -F 'app=@%s'" % config[:ipa]
+        curl_command << " -F 'app=@%s'" % path
         curl_command << " -F 'custom_git_url=%s'"           % git_url
         curl_command << " -F 'custom_git_branch=%s'"        % git_branch
         curl_command << " -F 'custom_git_tag=%s'"           % git_tag
@@ -97,7 +100,15 @@ module Fastlane
               UI.user_error!("Could not find apk file at path '#{File.expand_path(value)}'") unless File.exist?(value)
               UI.user_error("'#{value}' doesn't seem to be an apk file") unless value.end_with?(".apk")
             end
-            )
+          ),
+          FastlaneCore::ConfigItem.new(
+            key: :changelog,
+            optional: true,
+            default_value: Helper.backticks("git log -1 --pretty=%B").to_s,
+            default_value_dynamic: true,
+            env_name: "CHANGE_LOG",
+            description: "Write version changes",
+          )
         ]
       end
 
@@ -106,10 +117,12 @@ module Fastlane
           'updraft(
             upload_url: "...",
             ipa: "./ipa_file.ipa",
+            changelog: "...",
           )',
           'updraft(
             upload_url: "...",
             apk: "../build/app/outputs/apk/qa/release/app-qa-release.apk",
+            changelog: "...",
            )'
         ]
       end
