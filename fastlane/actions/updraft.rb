@@ -8,7 +8,7 @@ module Fastlane
         begin
         UI.important("Collecting the necessary data to upload...")
 
-        path = config[:ipa] if File.exist?(config[:ipa]) || config[:apk] if File.exist?(config[:apk])
+        path = config[:ipa] || config[:apk]
         UI.user_error!("Please provide ipa or apk") unless path
 
         git_url = Helper.backticks("git remote get-url origin").to_s
@@ -18,7 +18,9 @@ module Fastlane
 
         whats_new = config[:changelog]
 
-        bundle_version = Fastlane::Actions::GetIpaInfoPlistValueAction.run(ipa: config[:ipa], key: "CFBundleVersion").to_s
+        if config[:ipa]
+          bundle_version = Fastlane::Actions::GetIpaInfoPlistValueAction.run(ipa: config[:ipa], key: "CFBundleVersion").to_s
+        end
 
         build_type = other_action.is_ci? ? "CI" : "Fastlane"
 
@@ -91,7 +93,7 @@ module Fastlane
           FastlaneCore::ConfigItem.new(
             key: :apk,
             optional: true,
-            default_value: Actions.lane_context[SharedValues::APK_OUTPUT_PATH],
+            default_value: Actions.lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH],
             default_value_dynamic: true,
             conflicting_options: [:ipa],
             env_name: "UPDRAFT_APK_PATH",
@@ -115,14 +117,14 @@ module Fastlane
       def self.example_code
         [
           'updraft(
-            upload_url: "...",
-            ipa: "./ipa_file.ipa",
-            changelog: "...",
+            upload_url: "https://getupdraft.com/api/app_upload/123a4ab5678c91234cec567891b2babc/dde1cd23f4567a8cbdb91d23456b7c89/",
+            ipa: "./fastlane/ipa_file.ipa",
+            changelog: "New cool feature for iOS",
           )',
           'updraft(
-            upload_url: "...",
-            apk: "../build/app/outputs/apk/qa/release/app-qa-release.apk",
-            changelog: "...",
+            upload_url: "https://getupdraft.com/api/app_upload/987a6ab5432c19876cec543219b8babc/dde1cd23f4567a8cbdb91d23456b7c89/",
+            apk: "./fastlane/apk_file.apk",
+            changelog: "New cool feature for Android",
            )'
         ]
       end
