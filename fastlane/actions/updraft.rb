@@ -8,8 +8,8 @@ module Fastlane
         begin
         UI.important("Collecting the necessary data to upload...")
 
-        path = config[:ipa] || config[:apk]
-        UI.user_error!("Please provide ipa or apk") unless path
+        path = config[:ipa] || config[:apk] || config[:aab]
+        UI.user_error!("Please provide ipa, apk or aab file") unless path
 
         git_url = Helper.backticks("git remote get-url origin").to_s
         git_branch = Actions.git_branch.to_s
@@ -82,7 +82,7 @@ module Fastlane
             optional: true,
             default_value: Actions.lane_context[SharedValues::IPA_OUTPUT_PATH],
             default_value_dynamic: true,
-            conflicting_options: [:apk],
+            conflicting_options: [:apk, :aab],
             env_name: "UPDRAFT_IPA_PATH",
             description: "Path to your ipa file",
             verify_block: proc do |value|
@@ -95,12 +95,25 @@ module Fastlane
             optional: true,
             default_value: Actions.lane_context[SharedValues::GRADLE_APK_OUTPUT_PATH],
             default_value_dynamic: true,
-            conflicting_options: [:ipa],
+            conflicting_options: [:ipa, :aab],
             env_name: "UPDRAFT_APK_PATH",
             description: "Path to your apk file",
             verify_block: proc do |value|
               UI.user_error!("Could not find apk file at path '#{File.expand_path(value)}'") unless File.exist?(value)
               UI.user_error("'#{value}' doesn't seem to be an apk file") unless value.end_with?(".apk")
+            end
+          ),
+          FastlaneCore::ConfigItem.new(
+            key: :aab,
+            optional: true,
+            default_value: Actions.lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH],
+            default_value_dynamic: true,
+            conflicting_options: [:ipa, :apk],
+            env_name: "UPDRAFT_AAB_PATH",
+            description: "Path to your aab file",
+            verify_block: proc do |value|
+              UI.user_error!("Could not find aab file at path '#{File.expand_path(value)}'") unless File.exist?(value)
+              UI.user_error("'#{value}' doesn't seem to be an aab file") unless value.end_with?(".aab")
             end
           ),
           FastlaneCore::ConfigItem.new(
@@ -125,6 +138,11 @@ module Fastlane
             upload_url: "https://getupdraft.com/api/app_upload/987a6ab5432c19876cec543219b8babc/dde1cd23f4567a8cbdb91d23456b7c89/",
             apk: "./fastlane/apk_file.apk",
             changelog: "New cool feature for Android",
+           )',
+          'updraft(
+            upload_url: "https://getupdraft.com/api/app_upload/987a6ab5432c19876cec543219b8babc/dde1cd23f4567a8cbdb91d23456b7c89/",
+            aab: "./fastlane/aab_file.aab",
+            changelog: "Upload app bundle to Store",
            )'
         ]
       end
