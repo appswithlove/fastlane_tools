@@ -4,55 +4,59 @@ module Fastlane
     end
 
     class UpdraftAction < Action
-      def self.run(config)
+      def self.run(params)
         begin
-        UI.important("Collecting the necessary data to upload...")
+          UI.important("Collecting the necessary data to upload...")
 
-        path = config[:ipa] || config[:apk] || config[:aab]
-        UI.user_error!("Please provide ipa, apk or aab file") unless path
+          path = params[:ipa] || params[:apk] || params[:aab]
+          UI.user_error!("Please provide ipa, apk or aab file") unless path
 
-        git_url = Helper.backticks("git remote get-url origin").to_s
-        git_branch = Actions.git_branch.to_s
-        git_tag = Helper.backticks("git tag -l --points-at HEAD").to_s
-        git_commit_hash = Helper.backticks("git rev-parse HEAD").to_s
+          git_url = Helper.backticks("git remote get-url origin").to_s
+          git_branch = Actions.git_branch.to_s
+          git_tag = Helper.backticks("git tag -l --points-at HEAD").to_s
+          git_commit_hash = Helper.backticks("git rev-parse HEAD").to_s
 
-        whats_new = config[:changelog]
+          whats_new = params[:changelog]
 
-        if config[:ipa]
-          bundle_version = Fastlane::Actions::GetIpaInfoPlistValueAction.run(ipa: config[:ipa], key: "CFBundleVersion").to_s
-        end
-
-        build_type = other_action.is_ci? ? "CI" : "Fastlane"
-
-        curl_command = "curl -X PUT"
-        curl_command << " -F 'app=@%s'" % path
-        curl_command << " -F 'custom_git_url=%s'"           % git_url
-        curl_command << " -F 'custom_git_branch=%s'"        % git_branch
-        curl_command << " -F 'custom_git_tag=%s'"           % git_tag
-        curl_command << " -F 'custom_git_commit_hash=%s'"   % git_commit_hash
-        curl_command << " -F 'whats_new=%s'"                % whats_new
-        curl_command << " -F 'custom_bundle_version=%s'"    % bundle_version
-        curl_command << " -F 'build_type=%s'"               % build_type
-        curl_command << " " << config[:upload_url]
-        curl_command << " --http1.1"
-
-        UI.important("Uploading build to Updraft. This might take a while...")
-
-        FastlaneCore::CommandExecutor.execute(
-          command: curl_command,
-          print_all: false,
-          error: proc do |error_output|
-            UI.crash!("Uploading to Updraft failed!")
+          if params[:ipa]
+            bundle_version = Fastlane::Actions::GetIpaInfoPlistValueAction.run(ipa: params[:ipa], key: "CFBundleVersion").to_s
           end
-          )
 
-        UI.success("Successfully uploaded build to Updraft!")
+          build_type = other_action.is_ci? ? "CI" : "Fastlane"
+
+          curl_command = "curl -X PUT"
+          curl_command << " -F 'app=@#{path}'"
+          curl_command << " -F 'custom_git_url=#{git_url}'"
+          curl_command << " -F 'custom_git_branch=#{git_branch}'"
+          curl_command << " -F 'custom_git_tag=#{git_tag}'"
+          curl_command << " -F 'custom_git_commit_hash=#{git_commit_hash}'"
+          curl_command << " -F 'whats_new=#{whats_new}'"
+          curl_command << " -F 'custom_bundle_version=#{bundle_version}'"
+          curl_command << " -F 'build_type=#{build_type}'"
+          curl_command << " " << params[:upload_url]
+          curl_command << " --http1.1"
+
+          UI.important("Uploading build to Updraft. This might take a while...")
+
+          FastlaneCore::CommandExecutor.execute(
+            command: curl_command,
+            print_all: false,
+            error: proc do |error_output|
+              UI.crash!("Uploading to Updraft failed!")
+            end
+            )
+
+          UI.success("Successfully uploaded build to Updraft!")
+        end
       end
-    end
 
       #####################################################
       # @!group Documentation
       #####################################################
+
+      def self.category
+        :beta
+      end
 
       def self.description
         "Upload a release to getupdraft.com for testing"
@@ -62,10 +66,10 @@ module Fastlane
         [
           "You can run this directly after Gym to upload the build that was created, or set your own .ipa path.",
           "In all cases, you will need to provide a URL for uploading to. You can get this in your Updraft Project Settings"
-          ].join("\n")
-        end
+        ].join("\n")
+      end
 
-        def self.available_options
+      def self.available_options
         [
           FastlaneCore::ConfigItem.new(
             key: :upload_url,
@@ -122,7 +126,7 @@ module Fastlane
             default_value: Helper.backticks("git log -1 --pretty=%B").to_s,
             default_value_dynamic: true,
             env_name: "CHANGE_LOG",
-            description: "Write version changes",
+            description: "Write version changes"
           )
         ]
       end
@@ -148,7 +152,7 @@ module Fastlane
       end
 
       def self.authors
-        ["@astulz"]
+        ["astulz"]
       end
 
       def self.is_supported?(platform)
