@@ -18,22 +18,18 @@ module Fastlane
 
           whats_new = params[:changelog]
 
-          if params[:ipa]
-            bundle_version = Fastlane::Actions::GetIpaInfoPlistValueAction.run(ipa: params[:ipa], key: "CFBundleVersion").to_s
-          else
-            bundle_version = ""
-          end
+          bundle_version = params[:ipa] ? Fastlane::Actions::GetIpaInfoPlistValueAction.run(ipa: params[:ipa], key: "CFBundleVersion").to_s.strip : ""
 
           build_type = other_action.is_ci? ? "CI" : "Fastlane"
 
           curl_command = "curl -X PUT"
           curl_command << " -F 'app=@#{path.shellescape}'"
-          curl_command << " -F 'custom_git_url=#{git_url.shellescape}'"
-          curl_command << " -F 'custom_git_branch=#{git_branch.shellescape}'"
-          curl_command << " -F 'custom_git_tag=#{git_tag.shellescape}'"
-          curl_command << " -F 'custom_git_commit_hash=#{git_commit_hash.shellescape}'"
-          curl_command << " -F 'whats_new=#{whats_new.shellescape}'"
-          curl_command << " -F 'custom_bundle_version=#{bundle_version.shellescape}'"
+          curl_command << " -F 'custom_git_url=#{git_url.shellescape}'" unless git_url.empty?
+          curl_command << " -F 'custom_git_branch=#{git_branch.shellescape}'" unless git_branch.empty?
+          curl_command << " -F 'custom_git_tag=#{git_tag.shellescape}'" unless git_tash.empty?
+          curl_command << " -F 'custom_git_commit_hash=#{git_commit_hash.shellescape}'" unless git_commit_hash.empty?
+          curl_command << " -F 'whats_new=#{whats_new.shellescape}'" unless whats_new.empty?
+          curl_command << " -F 'custom_bundle_version=#{bundle_version.shellescape}'" unless bundle_version.empty?
           curl_command << " -F 'build_type=#{build_type.shellescape}'"
           curl_command << " " << params[:upload_url].shellescape
           curl_command << " --http1.1"
