@@ -20,6 +20,8 @@ module Fastlane
 
           if params[:ipa]
             bundle_version = Fastlane::Actions::GetIpaInfoPlistValueAction.run(ipa: params[:ipa], key: "CFBundleVersion").to_s
+          else
+            bundle_version = ""
           end
 
           build_type = other_action.is_ci? ? "CI" : "Fastlane"
